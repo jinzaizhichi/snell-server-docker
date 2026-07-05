@@ -69,6 +69,20 @@ services:
 - 如果两者不一致，构建会失败
 - 在 Snell Server v6 正式版发布前，`latest` 指向最近一次通过校验的测试版镜像
 
+## 自动更新
+
+仓库内置了一个可选的 GitHub Actions workflow：`.github/workflows/auto_bump.yaml`。
+
+- 每天北京时间 `00:30` 运行一次（GitHub cron 为 `30 16 * * *`，即 UTC `16:30`）
+- 抓取 Snell release notes 页面，解析出最新可下载版本
+- 只有在最新版本严格高于当前 `Dockerfile` 内置版本时，才会更新 `SNELL_VERSION`
+- 更新后会自动创建提交 `chore: bump snell to <version>`，并打上同名 Git tag
+
+要让这个自动提交的 tag 继续触发仓库现有的 Docker 发布 workflow，需要配置仓库 secret：`REPO_PUSH_TOKEN`。
+
+- 不能使用默认 `GITHUB_TOKEN`，因为它触发的 push / tag 事件不会继续触发其他 workflow
+- 这个 token 需要具备对当前仓库的写权限
+
 ## 网络说明
 
 - `host` 模式是官方推荐路径

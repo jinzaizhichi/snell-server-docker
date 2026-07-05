@@ -69,6 +69,20 @@ These legacy names will be removed when Snell Server v6 stable is released.
 - The build fails if the tag and bundled version differ
 - Until Snell Server v6 stable is released, `latest` points to the newest validated beta image
 
+## Auto Update
+
+The repository includes an optional GitHub Actions workflow: `.github/workflows/auto_bump.yaml`.
+
+- It runs every day at `00:30` China Standard Time (`30 16 * * *` in GitHub UTC cron)
+- It fetches the Snell release notes page and resolves the newest downloadable version
+- It only updates `SNELL_VERSION` when that resolved version is strictly newer than the version currently bundled in `Dockerfile`
+- When an update is found, it creates a commit named `chore: bump snell to <version>` and a Git tag with the same version name
+
+To let that automated tag still trigger the existing Docker publish workflow, configure the repository secret `REPO_PUSH_TOKEN`.
+
+- The default `GITHUB_TOKEN` is not enough because push / tag events created by it do not trigger downstream workflows
+- The token needs write access to this repository
+
 ## Networking Notes
 
 - `host` mode is the primary and recommended deployment path

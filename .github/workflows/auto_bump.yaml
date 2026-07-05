@@ -1,0 +1,105 @@
+name: Update bundled Snell version
+on:
+  schedule:
+    # 00:30 CST (UTC+8)
+    - cron: '30 16 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-bundled-snell-version
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Require push token
+        env:
+          REPO_PUSH_TOKEN: ${{ secrets.REPO_PUSH_TOKEN }}
+        run: |
+          if [ -z "${REPO_PUSH_TOKEN}" ]; then
+            echo "REPO_PUSH_TOKEN secret is required because GITHUB_TOKEN pushes do not trigger tag-based publish workflows." >&2
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version state
+        id: versions
+        run: |
+          latest_version="$(sh .github/scripts/resolve-latest-snell-version.sh)"
+          current_version="$(sh .github/scripts/check-release-version.sh)"
+          newest_known_version="$(printf '%s\n%s\n' "$current_version" "$latest_version" | sh .github/scripts/select-snell-version.sh)"
+
+          {
+            echo "latest_version=$latest_version"
+            echo "current_version=$current_version"
+          } >> "$GITHUB_OUTPUT"
+
+          if [ "$latest_version" = "$current_version" ]; then
+            echo "needs_update=false" >> "$GITHUB_OUTPUT"
+            echo "Snell is already at $current_version"
+            exit 0
+          fi
+
+          if [ "$newest_known_version" != "$latest_version" ]; then
+            echo "needs_update=false" >> "$GITHUB_OUTPUT"
+            echo "Current bundled version $current_version is newer than release notes version $latest_version"
+            exit 0
+          fi
+
+          echo "needs_update=true" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure tag does not already exist
+        if: steps.versions.outputs.needs_update == 'true'
+        env:
+          LATEST_VERSION: ${{ steps.versions.outputs.latest_version }}
+        run: |
+          git fetch --tags origin
+          if git ls-remote --exit-code --tags origin "refs/tags/${LATEST_VERSION}" >/dev/null 2>&1; then
+            echo "Tag ${LATEST_VERSION} already exists on origin" >&2
+            exit 1
+          fi
+
+      - name: Update Dockerfile
+        if: steps.versions.outputs.needs_update == 'true'
+        env:
+          CURRENT_VERSION: ${{ steps.versions.outputs.current_version }}
+          LATEST_VERSION: ${{ steps.versions.outputs.latest_version }}
+        run: |
+          perl -0pi -e 's/^ARG SNELL_VERSION=\Q'"${CURRENT_VERSION}"'\E$/ARG SNELL_VERSION='"${LATEST_VERSION}"'/mg' Dockerfile
+          grep -q "^ARG SNELL_VERSION=${LATEST_VERSION}$" Dockerfile
+          ! grep -q "^ARG SNELL_VERSION=${CURRENT_VERSION}$" Dockerfile
+
+      - name: Verify helper contracts
+        if: steps.versions.outputs.needs_update == 'true'
+        run: |
+          sh tests/release_version_contract.sh
+          sh tests/latest_version_contract.sh
+
+      - name: Commit and tag
+        if: steps.versions.outputs.needs_update == 'true'
+        env:
+          LATEST_VERSION: ${{ steps.versions.outputs.latest_version }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Dockerfile
+          git commit -m "chore: bump snell to ${LATEST_VERSION}"
+          git tag -a "${LATEST_VERSION}" -m "${LATEST_VERSION}"
+
+      - name: Push commit and tag
+        if: steps.versions.outputs.needs_update == 'true'
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          LATEST_VERSION: ${{ steps.versions.outputs.latest_version }}
+          REPO_PUSH_TOKEN: ${{ secrets.REPO_PUSH_TOKEN }}
+        run: |
+          git remote set-url origin "https://x-access-token:${REPO_PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push origin "HEAD:${DEFAULT_BRANCH}" "refs/tags/${LATEST_VERSION}"

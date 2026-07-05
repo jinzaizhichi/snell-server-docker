@@ -10,22 +10,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify release version helper
-        run: sh tests/release_version_contract.sh
+      - name: Verify version helpers
+        run: |
+          sh tests/release_version_contract.sh
+          sh tests/latest_version_contract.sh
 
       - name: Check shell syntax
         run: |
           sh -n entrypoint.sh
+          sh -n .github/scripts/check-release-version.sh
+          sh -n .github/scripts/select-snell-version.sh
+          sh -n .github/scripts/resolve-latest-snell-version.sh
           sh -n tests/runtime_contract.sh
           sh -n tests/docker_smoke.sh
           sh -n tests/readme_contract.sh
           sh -n tests/ci_contract.sh
+          sh -n tests/latest_version_contract.sh
+          sh -n tests/auto_update_contract.sh
 
       - name: Run host contract tests
         run: |
           sh tests/runtime_contract.sh
           sh tests/readme_contract.sh
           sh tests/ci_contract.sh
+          sh tests/auto_update_contract.sh
 
       - name: Build image
         run: docker build -t snell:test .
