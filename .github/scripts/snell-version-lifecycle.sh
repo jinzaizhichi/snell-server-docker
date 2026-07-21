@@ -26,7 +26,7 @@ die() {
 }
 
 is_valid_snell_version() {
-  printf '%s\n' "$1" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(b[0-9]+)?$'
+  printf '%s\n' "$1" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(b[0-9]+|rc)?$'
 }
 
 read_current_version() {
@@ -76,7 +76,15 @@ select_version() {
           minor = parts[2] + 0
           patch = parts[3] + 0
           prerelease_num = parts[4] + 0
+        } else if (normalized ~ /^v[0-9]+\.[0-9]+\.[0-9]+rc$/) {
+          stability = 1
+          sub(/^v/, "", normalized)
+          split(normalized, parts, /[.r]/)
+          major = parts[1] + 0
+          minor = parts[2] + 0
+          patch = parts[3] + 0
         } else if (normalized ~ /^v[0-9]+\.[0-9]+\.[0-9]+$/) {
+          stability = 2
           sub(/^v/, "", normalized)
           split(normalized, parts, /\./)
           major = parts[1] + 0
@@ -114,8 +122,8 @@ extract_publishable_versions() {
   source="${1:-$DEFAULT_RELEASE_NOTES_URL}"
 
   asset_pairs="$(load_release_notes "$source" |
-    grep -Eo 'snell-server-v[0-9]+\.[0-9]+\.[0-9]+(b[0-9]+)?-linux-(amd64|aarch64)\.zip' |
-    sed -E 's/^snell-server-(v[0-9]+\.[0-9]+\.[0-9]+(b[0-9]+)?)-linux-(amd64|aarch64)\.zip$/\1 \3/' |
+    grep -Eo 'snell-server-v[0-9]+\.[0-9]+\.[0-9]+(b[0-9]+|rc)?-linux-(amd64|aarch64)\.zip' |
+    sed -E 's/^snell-server-(v[0-9]+\.[0-9]+\.[0-9]+(b[0-9]+|rc)?)-linux-(amd64|aarch64)\.zip$/\1 \3/' |
     sort -u || true)"
 
   if [ -z "$asset_pairs" ]; then
