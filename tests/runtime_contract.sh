@@ -59,7 +59,7 @@ env \
   DNS=1.1.1.1,8.8.8.8 \
   DNS_IP_PREFERENCE=prefer-ipv4 \
   EGRESS_INTERFACE=eth0 \
-  LOG_LEVEL=debug \
+  LOG_LEVEL=verbose \
   /bin/sh "$ENTRYPOINT" >"$LOG_FILE" 2>&1
 
 grep -q 'PORT:3456' "$LOG_FILE"
@@ -67,8 +67,8 @@ grep -q 'MODE:unshaped' "$LOG_FILE"
 grep -q 'DNS:1.1.1.1,8.8.8.8' "$LOG_FILE"
 grep -q 'DNS_IP_PREFERENCE:prefer-ipv4' "$LOG_FILE"
 grep -q 'EGRESS_INTERFACE:eth0' "$LOG_FILE"
-grep -q 'LOG_LEVEL:debug' "$LOG_FILE"
-grep -Fq "SNELL_STUB:-c ${SNELL_HOME_DIR}/snell.conf -l debug" "$LOG_FILE"
+grep -q 'LOG_LEVEL:verbose' "$LOG_FILE"
+grep -Fq "SNELL_STUB:-c ${SNELL_HOME_DIR}/snell.conf -l verbose" "$LOG_FILE"
 
 if grep -q '^PSK:' "$LOG_FILE"; then
   echo "runtime summary must not expose PSK" >&2
@@ -86,12 +86,12 @@ env \
   SNELL_HOME="$SNELL_HOME_DIR" \
   PSK=abcdefghijkl \
   DNSIP=ipv4-only \
-  LOG=debug \
+  LOG=verbose \
   VERSION=v9.9.9 \
   /bin/sh "$ENTRYPOINT" >"$LOG_FILE" 2>&1
 
 grep -q 'PORT:2345' "$LOG_FILE"
-grep -q 'LOG_LEVEL:debug' "$LOG_FILE"
+grep -q 'LOG_LEVEL:verbose' "$LOG_FILE"
 grep -q '\[deprecated\] DNSIP is deprecated' "$LOG_FILE"
 grep -q '\[deprecated\] LOG is deprecated' "$LOG_FILE"
 grep -q '\[deprecated\] VERSION is deprecated and ignored' "$LOG_FILE"

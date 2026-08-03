@@ -14,7 +14,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-CONTAINER_ID="$(docker run -d --init --network host -e PORT="$PORT_VALUE" -e PSK=abcdefghijkl -e DNS_IP_PREFERENCE=ipv4-only -e LOG_LEVEL=debug "$IMAGE")"
+CONTAINER_ID="$(docker run -d --init --network host -e PORT="$PORT_VALUE" -e PSK=abcdefghijkl -e DNS_IP_PREFERENCE=ipv4-only -e LOG_LEVEL=verbose "$IMAGE")"
 sleep 2
 docker logs "$CONTAINER_ID" >"$LOG_FILE" 2>&1
 
@@ -25,7 +25,7 @@ if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_ID")" != "true" ]; th
 fi
 
 grep -q "PORT:${PORT_VALUE}" "$LOG_FILE"
-grep -q 'LOG_LEVEL:debug' "$LOG_FILE"
+grep -q 'LOG_LEVEL:verbose' "$LOG_FILE"
 grep -q 'DNS_IP_PREFERENCE:ipv4-only' "$LOG_FILE"
 
 if grep -q '^PSK:' "$LOG_FILE"; then
