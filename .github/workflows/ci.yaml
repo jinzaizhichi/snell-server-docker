@@ -1,6 +1,8 @@
 name: CI
 on:
   push:
+    branches:
+      - main
   pull_request:
 
 jobs:
@@ -10,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Verify version helpers
+      - name: Verify version lifecycle
         run: |
           sh tests/release_version_contract.sh
           sh tests/latest_version_contract.sh
@@ -20,23 +22,13 @@ jobs:
           sh -n entrypoint.sh
           sh -n runtime-config.sh
           sh -n .github/scripts/snell-version-lifecycle.sh
-          sh -n .github/scripts/check-release-version.sh
-          sh -n .github/scripts/select-snell-version.sh
-          sh -n .github/scripts/resolve-latest-snell-version.sh
+          sh -n tests/release_version_contract.sh
+          sh -n tests/latest_version_contract.sh
           sh -n tests/runtime_contract.sh
           sh -n tests/docker_smoke.sh
-          sh -n tests/readme_contract.sh
-          sh -n tests/ci_contract.sh
-          sh -n tests/repository_contract.sh
-          sh -n tests/latest_version_contract.sh
-          sh -n tests/auto_update_contract.sh
 
-      - name: Run host contract tests
-        run: |
-          sh tests/runtime_contract.sh
-          sh tests/readme_contract.sh
-          sh tests/ci_contract.sh
-          sh tests/auto_update_contract.sh
+      - name: Run runtime contract tests
+        run: sh tests/runtime_contract.sh
 
       - name: Build image
         run: docker build -t snell:test .

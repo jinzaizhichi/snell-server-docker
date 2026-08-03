@@ -16,6 +16,22 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Check shell syntax
+        run: |
+          sh -n entrypoint.sh
+          sh -n runtime-config.sh
+          sh -n .github/scripts/snell-version-lifecycle.sh
+          sh -n tests/release_version_contract.sh
+          sh -n tests/latest_version_contract.sh
+          sh -n tests/runtime_contract.sh
+          sh -n tests/docker_smoke.sh
+
+      - name: Run host contract tests
+        run: |
+          sh tests/release_version_contract.sh
+          sh tests/latest_version_contract.sh
+          sh tests/runtime_contract.sh
+
       - name: Set build metadata
         run: |
           echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
@@ -23,7 +39,7 @@ jobs:
 
       - name: Resolve and validate Snell version
         run: |
-          echo "SNELL_VERSION=$(sh .github/scripts/check-release-version.sh)" >> "$GITHUB_ENV"
+          echo "SNELL_VERSION=$(sh .github/scripts/snell-version-lifecycle.sh validate-current)" >> "$GITHUB_ENV"
 
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v4
