@@ -72,7 +72,7 @@ jobs:
           grep -q "^ARG SNELL_VERSION=${LATEST_VERSION}$" Dockerfile
           ! grep -q "^ARG SNELL_VERSION=${CURRENT_VERSION}$" Dockerfile
 
-      - name: Verify helper contracts
+      - name: Verify version lifecycle contracts
         if: steps.versions.outputs.needs_update == 'true'
         run: |
           sh tests/release_version_contract.sh
@@ -97,4 +97,4 @@ jobs:
           REPO_PUSH_TOKEN: ${{ secrets.REPO_PUSH_TOKEN }}
         run: |
           git remote set-url origin "https://x-access-token:${REPO_PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          git push origin "HEAD:${DEFAULT_BRANCH}" "refs/tags/${LATEST_VERSION}"
+          git push --atomic origin "HEAD:${DEFAULT_BRANCH}" "refs/tags/${LATEST_VERSION}"

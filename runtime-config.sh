@@ -208,10 +208,3 @@ snell_runtime_apply() {
   snell_runtime_write_config "$config_path"
   snell_runtime_print_summary
 }
-
-snell_runtime_configure() {
-  config_path=$1
-
-  snell_runtime_prepare
-  snell_runtime_apply "$config_path"
-}
