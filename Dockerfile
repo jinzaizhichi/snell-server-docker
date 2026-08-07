@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG SNELL_VERSION=v6.0.0rc
+ARG SNELL_VERSION=v6.0.0rc2
 
 FROM debian:stable-slim AS builder
 
